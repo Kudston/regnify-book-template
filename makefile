@@ -165,7 +165,55 @@ run-test-roles-http:
 
 	make kill-test
 
+
 # * ------ End User Modules ------ * #
+
+
+# * ------ Book Module ------ * #
+
+run-test-book:
+	make kill-test
+
+	make run-test-migrations
+	
+	# * run the tests
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books
+
+	make kill-test
+
+run-test-book-crud:
+	make kill-test
+
+	make run-test-migrations
+	
+	# * run the tests
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books/test_book_crud
+
+	make kill-test
+
+
+run-test-book-service:
+	make kill-test
+
+	make run-test-migrations
+	
+	# * run the tests
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books/test_book_service
+
+	make kill-test
+
+
+run-test-book-http:
+	make kill-test
+
+	make run-test-migrations
+	
+	# * run the tests
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books/test_book_http
+
+	make kill-test
+# * ------ End Book Modules ------ * #
+
 
 
 # * ------ File Module ------ * #
