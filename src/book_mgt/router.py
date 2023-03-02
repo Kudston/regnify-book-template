@@ -15,6 +15,7 @@ from src.service import (
 
 router = APIRouter(prefix="/books", tags=["Book services"])
 
+
 @router.post("/create-book", response_model=book_schema.Book_Out)
 async def create_book(book_info:book_schema.Book_create, 
                 book_service:Book_Service = Security(initiate_Book_service)
@@ -52,6 +53,15 @@ def get_book_by_title(book_title: str,
             ):
     result = book_service.get_book_by_title(book_title=book_title)
     return handle_result(result, book_schema.Book_Out)
+
+@router.get("/read-books", 
+            response_model=book_schema.read_books)
+def get_read_books(common:CommonQueryParams = Depends(),
+                   book_service:Book_Service = Security(initiate_Book_service)
+                ):
+    result = book_service.get_read_book_by_user(common.skip,common.limit)
+    return result.data
+
 
 @router.get("/{book_id}", 
             response_model=book_schema.Book_Out)
@@ -92,3 +102,4 @@ async def mark_book(book_id:book_schema.UUID,
 
     #return result
     return handle_result(result=result, expected_schema= book_schema.read_book)
+

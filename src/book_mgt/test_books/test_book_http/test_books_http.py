@@ -96,3 +96,11 @@ def test_mark_book_http(client:TestClient,
 
     assert mark_response.status_code == 200
     assert mark_response.json()['book_id'] == response.json()['id']
+
+    read_books = client.get(f'/books/read-books',
+                            headers=test_book_super_admin_header)
+    assert read_books.status_code == 200
+    data = read_books.json()
+
+    assert data['total'] == 1
+    

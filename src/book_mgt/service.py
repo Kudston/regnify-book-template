@@ -252,3 +252,18 @@ class Book_Service(BaseService):
         except Exception as raised_exception:
             self.logger.exception(raised_exception)
             return failed_service_result(raised_exception)
+
+    def get_read_by(self,book_id:UUID, skip: int =0, limit: int =100) -> ServiceResult:
+        try:
+            books_read = self.book_crud.get_book_read_by(book_id, skip,limit)
+            total_books = self.book_crud.get_number_of_readers(book_id, skip, limit)
+
+            data = {'total':total_books, 'data':books_read}
+            
+            return ServiceResult(
+                data=data,
+                success=True
+            )
+        except Exception as raised_exception:
+            self.logger.exception(raised_exception)
+            return failed_service_result(raised_exception)
