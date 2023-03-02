@@ -28,6 +28,20 @@ async def create_book(book_info:book_schema.Book_create,
     #return result
     return handle_result(result=result, expected_schema= book_schema.Book_Out)
 
+@router.post('/mark-book/{book_id}',
+             response_model=book_schema.read_book)
+async def mark_book(book_id:book_schema.UUID, 
+                book_service:Book_Service = Security(initiate_Book_service)
+                ):
+    #call the book crud to mark book
+    result = book_service.mark_book_read(book_id)
+    
+    #send mail with information on newly created book
+
+    #return result
+    return handle_result(result=result, expected_schema= book_schema.read_book)
+
+
 @router.get("/my-books",
             response_model=book_schema.Books_out)
 def get_books_for_user(common:CommonQueryParams = Depends(),
@@ -89,17 +103,4 @@ def delete_book(book_id:book_schema.UUID,
     result = book_service.delete_book(book_id)
     return handle_result(result)
 
-
-@router.post('/mark-book/{book_id}',
-             response_model=book_schema.read_book)
-async def mark_book(book_id:book_schema.UUID, 
-                book_service:Book_Service = Security(initiate_Book_service)
-                ):
-    #call the book crud to mark book
-    result = book_service.mark_book_read(book_id)
-    
-    #send mail with information on newly created book
-
-    #return result
-    return handle_result(result=result, expected_schema= book_schema.read_book)
 
