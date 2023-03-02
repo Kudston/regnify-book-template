@@ -27,7 +27,8 @@ def upgrade() -> None:
     sa.Column("book_file_id",postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column("book_avatar_id", postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column("uploaded_date", sa.DateTime(), nullable=True),
-    sa.Column("updated_date", sa.DateTime(), nullable=True)
+    sa.Column("updated_date", sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
     )
 
 

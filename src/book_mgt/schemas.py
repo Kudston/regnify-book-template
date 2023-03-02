@@ -41,7 +41,19 @@ class Book_update(ParentPydanticModel):
     updated_date: datetime = datetime.utcnow()
 
 class Books_out(ParentPydanticModel):
-    total: int = 1
+    total: int = 0
     data: list[Book_Out]
 
-    
+class read_book(ParentPydanticModel):
+    book_id: UUID
+
+class read_books(ParentPydanticModel):
+    total: int = 0
+    data: list[read_book]
+
+class read_by(ParentPydanticModel):
+    user_id: UUID
+
+class readers(ParentPydanticModel):
+    total: int = 0
+    data: list[read_by]

@@ -194,8 +194,8 @@ class Book_Service(BaseService):
             self.logger.exception(raised_exception)
             return failed_service_result(raised_exception)
     
-    def get_books(
-        self, skip:int =0, limit:int =100
+    def get_books(self, 
+                  skip:int =0, limit:int =100
     ) -> ServiceResult:
         if not self.requesting_user.is_super_admin:
             return ServiceResult(
@@ -215,4 +215,40 @@ class Book_Service(BaseService):
             self.logger.exception(raised_exception)
             return failed_service_result(raised_exception)
 
+    #marking books as read
+    def mark_book_read(self,
+                       book_id:UUID) -> ServiceResult:
+        
 
+        try:
+            db_book:Book = self.book_crud.get_book_by_id(book_id)
+
+            if not db_book:
+                return ServiceResult(
+                    data=None,
+                    success=False,
+                    exception="Book does not exist"
+                )
+            
+            mark_read = self.book_crud.mark_read(self.requesting_user.id, book_id)
+        except GeneralException as raised_exception:
+            return failed_service_result(raised_exception)
+        except Exception as raised_exception:
+            self.logger.exception(raised_exception)
+            return failed_service_result(raised_exception)
+        return ServiceResult(data=mark_read, success=True)
+
+    def get_read_book_by_user(self, skip: int =0, limit: int =100) -> ServiceResult:
+        try:
+            books_read = self.book_crud.get_read_books_by_user(self.requesting_user.id, skip,limit)
+            total_books = self.book_crud.get_read_book_counts(self.requesting_user.id, skip, limit)
+
+            data = {'total':total_books, 'data':books_read}
+            
+            return ServiceResult(
+                data=data,
+                success=True
+            )
+        except Exception as raised_exception:
+            self.logger.exception(raised_exception)
+            return failed_service_result(raised_exception)

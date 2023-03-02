@@ -73,3 +73,26 @@ def test_delete_book(client:TestClient,
 
     assert deleted_response.status_code == 200
     assert deleted_response.json()['detail']=="1" 
+
+
+def test_mark_book_http(client:TestClient, 
+                               test_book_super_admin_user:dict, 
+                               test_book_super_admin_header:dict
+):
+    json_data = {
+        "title":BOOK_TITLE_UNDER_TEST,
+        "category":"http  category",
+        "description":"http description"
+    }
+    response = client.post('/books/create-book',
+                          json=json_data,
+                           headers=test_book_super_admin_header)
+    
+    assert response.status_code==200
+    assert response.json()['title'] == BOOK_TITLE_UNDER_TEST
+
+    mark_response = client.post(f'/books/mark-book/{response.json()["id"]}',
+                                headers = test_book_super_admin_header)
+
+    assert mark_response.status_code == 200
+    assert mark_response.json()['book_id'] == response.json()['id']

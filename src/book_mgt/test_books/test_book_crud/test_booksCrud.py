@@ -4,7 +4,7 @@ from src.book_mgt.crud import Book_crud
 from src.book_mgt import schemas as book_schemas
 from src.users.models  import User
 from src.book_mgt import models
-from .conftest import test_book1,test_admin_user
+from .conftest import test_book1,test_book2, test_admin_user
 from src.config import setup_logger
 
 logger = setup_logger()
@@ -55,4 +55,21 @@ def test_delete_book(book_crud:Book_crud):
         deleted_book = book_crud.get_book_by_id(book.id)
         
 
-    
+def test_mark_read_book(book_crud:Book_crud,test_book1:models.Book, test_book2:models.Book, test_admin_user:User):
+    book_id = test_book1.id
+    user_id = test_admin_user.id
+
+    created:models.read_book = book_crud.mark_read(user_id, book_id)
+
+    assert created.book_id == book_id
+    assert created.user_id == user_id
+    read_book2:models.read_book = book_crud.mark_read(user_id, test_book2.id)    
+
+    read_books = book_crud.get_read_books_by_user(user_id)
+    read_books_count = book_crud.get_read_book_counts((user_id))
+
+    assert isinstance(read_books[0], models.read_book)
+    assert isinstance(read_books, list)
+    assert read_books_count==2
+
+

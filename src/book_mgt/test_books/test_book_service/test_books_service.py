@@ -84,3 +84,24 @@ def test_delete_book(test_admin_user:User, test_user:User, test_db):
         updated_book = book_service.get_book_by_id(book.id)
 
 
+def test_create_marked_book(test_admin_user:User, test_db):
+    book_service = Book_Service(test_admin_user,
+                                test_db,
+                                Settings())
+    
+    data = book_schema.Book_create(
+        title="service mark book test",
+        category= "service test1",
+        description= "service test description"
+    )
+    book:ServiceResult = book_service.create_book(data)
+
+    assert book.data.title == "service mark book test"
+    
+    book_service = Book_Service(test_admin_user,
+                                test_db,
+                                Settings())
+    mark_book:ServiceResult = book_service.mark_book_read(book.data.id)
+
+    assert mark_book.data.user_id==test_admin_user.id
+    

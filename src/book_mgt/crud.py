@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from . import models 
 from src.database import setup_logger
 from src.exceptions import GeneralException
+from src.users.models import User
 from sqlalchemy.exc import IntegrityError
 from .schemas import (
     Book_Base,
@@ -31,7 +32,7 @@ class Book_crud:
         return self.db.query(models.Book).offset(skip).limit(limit).all()
 
     def get_total_books(self) -> int:
-        return self.db.query(models.Book).filter().count()
+        return self.db.query(models.Book).count()
 
     def get_books_for_user(self, user_id, skip =0, limit =100) -> list[models.Book]:
         return self.db.query(models.Book).filter(models.Book.author_id==user_id).offset(skip).limit(limit).all()
@@ -84,3 +85,36 @@ class Book_crud:
         deleted = db_book.delete(synchronize_session=False)
         self.db.commit()
         return deleted
+
+    def mark_read(self, user_id:UUID, book_id:UUID):
+        try:
+            book_read = models.read_book(book_id=book_id,user_id=user_id)
+            self.db.add(book_read)
+            self.db.commit()
+            self.db.refresh(book_read)
+            return book_read
+        except IntegrityError as raised_exception:
+            self.logger.exception(raised_exception)
+            self.logger.error(raised_exception)
+            raise GeneralException("the book is already marked as read")
+        except Exception as raised_exception:
+            self.logger.exception(raised_exception)
+            self.logger.error(raised_exception)
+            raise GeneralException(raised_exception)
+        finally:
+            self.db.rollback()
+    
+    #get books read by a user
+    def get_read_books_by_user(self, user_id:UUID, skip:int =0, limit:int =100) -> list[models.read_book]:
+        return self.db.query(models.read_book).filter(models.read_book.user_id==user_id).offset(skip).limit(limit).all()
+    
+    def get_read_book_counts(self, user_id:UUID, skip:int =0, limit:int =100) -> int:
+        return self.db.query(models.read_book).filter(models.read_book.user_id==user_id).offset(skip).limit(limit).count()
+    
+    #get users who read a book
+    def get_book_read_by(self, book_id:UUID) -> list[models.read_book]:
+        return self.db.query(models.read_book).filter(models.read_book.book_id==book_id).offset(skip).limit(limit).all()
+    
+    def get_number_of_readers(self, book_id:UUID, skip:int =0, limit:int =100) -> int:
+        return self.db.query(models.read_book).filter(models.read_book.book_id==book_id).offset(skip).limit(limit).count()
+    
