@@ -11,6 +11,7 @@ from .conftest import (
     book_service_test_non_admin,
     test_admin_user,
     test_db,
+    test_book1,
     Settings,
     )
 
@@ -19,7 +20,6 @@ logger = setup_logger()
 def test_create_book_by_admin(book_service_test_admin:Book_Service):
     data = book_schema.Book_create(
         title="service book test",
-        category= "service test1",
         description= "service test description"
     )
     
@@ -41,11 +41,11 @@ def test_update_book(test_admin_user:User, test_user:User, test_db):
 
     title_under_test = "service book test"
     data = book_schema.Book_update(
-        category="updated book"
+        description="updated book"
         )
     
 
-    book:models.Book = book_service.get_book_by_title(title_under_test).data
+    book = book_service.get_book_by_title(title_under_test).data
 
     non_user_attempt = non_owner_service.update_book(book.id, data)
     assert non_user_attempt.success == False
@@ -57,7 +57,7 @@ def test_update_book(test_admin_user:User, test_user:User, test_db):
 
     assert isinstance(updated_book.data, models.Book)
     book_data:models.Book = updated_book.data
-    assert book_data.category == "updated book"
+    assert book_data.description == "updated book"
 
 def test_delete_book(test_admin_user:User, test_user:User, test_db):
     book_service = Book_Service(test_admin_user,
@@ -70,7 +70,7 @@ def test_delete_book(test_admin_user:User, test_user:User, test_db):
 
     title_under_test = "service book test"
     
-    book:models.Book = book_service.get_book_by_title(title_under_test).data
+    book = book_service.get_book_by_title(title_under_test).data
 
     non_user_attempt = non_owner_service.delete_book(book.id)
     book_exist:ServiceResult = book_service.get_book_by_id(book.id)
@@ -91,7 +91,6 @@ def test_create_marked_book(test_admin_user:User, test_db):
     
     data = book_schema.Book_create(
         title="service mark book test",
-        category= "service test1",
         description= "service test description"
     )
     book:ServiceResult = book_service.create_book(data)
@@ -105,3 +104,14 @@ def test_create_marked_book(test_admin_user:User, test_db):
 
     assert mark_book.data.user_id==test_admin_user.id
     
+def test_get_books_by_category(test_admin_user:User, test_db, test_book1:models.Book):
+    book_service = Book_Service(test_admin_user,
+                                test_db,
+                                Settings())
+    result = book_service.get_books_by_category(test_book1.category)
+
+    book_1 = result.data['data'][0]
+    assert result.success == True
+    assert book_1.category == test_book1.category
+    assert result.data['total'] == 1  
+

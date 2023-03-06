@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-from sqlalchemy.dialects.postgresql import UUID
 from typing import Union
 
 
 from src.users import schemas as user_schema
+from src.users.crud.users import UserCRUD
 from src.service import (
     BaseService,
     ServiceResult,
@@ -18,7 +18,7 @@ from src.exceptions import (
 )
 
 from .crud import Book_crud
-from .models import Book
+from .models import Book,Book_read
 from . import schemas as book_schema
 from .exceptions import (
     Book_already_exist_exception,
@@ -31,6 +31,7 @@ class Book_Service(BaseService):
     ) -> None:
         super().__init__(requesting_user, db)
         self.book_crud = Book_crud(db)
+        self.user_crud = UserCRUD(db)
         self.app_settings: Settings = app_settings
         self.logger = setup_logger()
         
@@ -41,13 +42,13 @@ class Book_Service(BaseService):
     def create_book(
         self, book: book_schema.Book_create
     ) -> ServiceResult[Union[Book, None]]:
-        db_book: Book = self.book_crud.get_book_by_title(book_title= book.title)
+        db_book: Book = self.get_book_by_title(book_title= book.title).data
         
         if db_book:
             return ServiceResult(
                 data=None,
                 success= False,
-                exception= GeneralException(f'book already exist')
+                exception= GeneralException('book already exist')
             )
         try:            
             if not  self.requesting_user.is_active:
@@ -66,7 +67,7 @@ class Book_Service(BaseService):
         return ServiceResult(data=created_book, success=True)
 
     def update_book(
-        self, book_id:UUID,
+        self, book_id:book_schema.UUID,
         new_book_info:book_schema.Book_update
     ) -> ServiceResult[Union[Book, None]]:
         try:
@@ -76,13 +77,13 @@ class Book_Service(BaseService):
                 return ServiceResult(
                     data=None,
                     success=False,
-                    exception="Book does not exist"
+                    exception=GeneralException("Book does not exist")
                 )
             if  (not self.requesting_user.is_super_admin) or (not db_book.author_id==self.requesting_user.id):
                 return ServiceResult(
                     data=None,
                     success=False,
-                    exception="not allowed to perform operation"
+                    exception=GeneralException("not allowed to perform operation")
                 )
             
             updated = self.book_crud.update_book(book_id,new_book_info)
@@ -96,8 +97,8 @@ class Book_Service(BaseService):
             return failed_service_result(raised_exception)
 
     def delete_book(
-        self, book_id:UUID  
-        ) -> ServiceResult[Union[Book]]:
+        self, book_id:book_schema.UUID  
+        ) -> ServiceResult[Union[Book, None]]:
         try:
             db_book:Book = self.book_crud.get_book_by_id(book_id)
 
@@ -105,13 +106,13 @@ class Book_Service(BaseService):
                 return ServiceResult(
                     data=None,
                     success=False,
-                    exception="Book does not exist"
+                    exception=GeneralException("Book does not exist")
                 )
             if  db_book.author_id!=self.requesting_user.id:
                 return ServiceResult(
                     data=None,
                     success=False,
-                    exception="not allowed to perform operation"
+                    exception=GeneralException("not allowed to perform operation")
                 )
             deleted_book = self.book_crud.delete_book(book_id)
 
@@ -133,7 +134,7 @@ class Book_Service(BaseService):
                 return ServiceResult(
                     data=None,
                     success= False,
-                    exception= GeneralException(f'book does not exist')
+                    exception= GeneralException('book does not exist')
                 )
             
 
@@ -146,7 +147,7 @@ class Book_Service(BaseService):
             return failed_service_result(raised_exception)
     
     def get_book_by_id(
-        self, book_id:UUID
+        self, book_id:book_schema.UUID
     ) -> ServiceResult[Union[Book, None]]:
         try:
             db_book:Book = self.book_crud.get_book_by_id(book_id=book_id)
@@ -155,7 +156,7 @@ class Book_Service(BaseService):
                 return ServiceResult(
                     data=None,
                     success=False,
-                    exception=GeneralException(f'book does not exist')
+                    exception=GeneralException('book does not exist')
                 )
             return ServiceResult(
             data=db_book,
@@ -166,22 +167,22 @@ class Book_Service(BaseService):
             return failed_service_result(raised_exception)
         
     
-    def get_user_books(
-        self, skip:int =0, limit:int =100
+    def get_books_by_category(
+        self, category_id:book_schema.UUID, skip:int =0, limit:int =100
     ) -> ServiceResult:
         try:
             if not self.requesting_user.is_super_admin:
                 return ServiceResult(
                     data=None,
                     success=False,
-                    exception=f'user is not active'   
+                    exception=GeneralException('user is not active')   
                 )
             
             user_id = self.requesting_user.id
             
-            db_books = self.book_crud.get_books_for_user(user_id=user_id, skip=skip, limit=limit)
+            db_books = self.book_crud.get_books_by_category(category_id=category_id, skip=skip, limit=limit)
             
-            books_count = self.book_crud.get_total_books_for_user(user_id=user_id)
+            books_count = self.book_crud.get_total_books_by_category(category_id)
             
             book_data = {"total":books_count, "data":db_books}
             
@@ -194,6 +195,7 @@ class Book_Service(BaseService):
             self.logger.exception(raised_exception)
             return failed_service_result(raised_exception)
     
+
     def get_books(self, 
                   skip:int =0, limit:int =100
     ) -> ServiceResult:
@@ -201,7 +203,7 @@ class Book_Service(BaseService):
             return ServiceResult(
                 data=None,
                 success=False,
-                exception = f'you are not allowed to perform this action'
+                exception = GeneralException('you are not allowed to perform this action')
             )
         try:
             db_books = self.book_crud.get_books(skip, limit)
@@ -217,28 +219,36 @@ class Book_Service(BaseService):
 
     #marking books as read
     def mark_book_read(self,
-                       book_id:UUID) -> ServiceResult:
-        
+                       book_id:book_schema.UUID) -> ServiceResult[Union[Book_read,None]]:
+        db_book = self.get_book_by_id(book_id).data
+
+        if not db_book:
+            return ServiceResult(
+                data=None,
+                success=False,
+                exception=GeneralException("Book does not exist")
+            )
+            
 
         try:
-            db_book:Book = self.book_crud.get_book_by_id(book_id)
-
-            if not db_book:
+            if not self.requesting_user.is_active:
                 return ServiceResult(
                     data=None,
                     success=False,
-                    exception="Book does not exist"
+                    exception=GeneralException("not allowed")
                 )
-            
-            mark_read = self.book_crud.mark_read(self.requesting_user.id, book_id)
+            user_ = self.user_crud.get_user(self.requesting_user.id)
+            mark_read = self.book_crud.mark_read(user_, book_id)
+            print(mark_read)
         except GeneralException as raised_exception:
             return failed_service_result(raised_exception)
         except Exception as raised_exception:
             self.logger.exception(raised_exception)
-            return failed_service_result(raised_exception)
+            return failed_service_result(str(raised_exception))
+        
         return ServiceResult(data=mark_read, success=True)
 
-    def get_read_book_by_user(self, skip: int =0, limit: int =100) -> ServiceResult:
+    def get_read_books_by_user(self, skip: int =0, limit: int =100) -> ServiceResult:
         try:
             books_read = self.book_crud.get_read_books_by_user(self.requesting_user.id, skip,limit)
             total_books = self.book_crud.get_read_book_counts(self.requesting_user.id, skip, limit)
@@ -253,7 +263,7 @@ class Book_Service(BaseService):
             self.logger.exception(raised_exception)
             return failed_service_result(raised_exception)
 
-    def get_read_by(self,book_id:UUID, skip: int =0, limit: int =100) -> ServiceResult:
+    def get_read_by(self,book_id:book_schema.UUID, skip: int =0, limit: int =100) -> ServiceResult:
         try:
             books_read = self.book_crud.get_book_read_by(book_id, skip,limit)
             total_books = self.book_crud.get_number_of_readers(book_id, skip, limit)

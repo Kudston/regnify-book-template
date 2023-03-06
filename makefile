@@ -20,7 +20,11 @@ down-dev-postgres:
 # ****************** ALEMBIC ****************** #
 
 run-db-upgrade:
-	alembic upgrade head
+	docker compose -f docker/local/docker-compose.yml run -v ./:/usr/src/regnify-api  --rm regnify-api alembic upgrade head
+
+
+run-alembic-revision:
+	docker compose -f docker/local/docker-compose.yml run -v ./:/usr/src/regnify-api  --rm regnify-api  alembic revision --autogenerate
 
 # ****************** END ALEMBIC ****************** #
 
@@ -177,7 +181,7 @@ run-test-book:
 	make run-test-migrations
 	
 	# * run the tests
-	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/books tests/books
 
 	make kill-test
 
@@ -187,7 +191,7 @@ run-test-book-crud:
 	make run-test-migrations
 	
 	# * run the tests
-	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books/test_book_crud
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/books tests/books/test_book_crud
 
 	make kill-test
 
@@ -198,7 +202,7 @@ run-test-book-service:
 	make run-test-migrations
 	
 	# * run the tests
-	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books/test_book_service
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/books tests/books/test_book_service
 
 	make kill-test
 
@@ -209,7 +213,7 @@ run-test-book-http:
 	make run-test-migrations
 	
 	# * run the tests
-	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/book_mgt src/book_mgt/test_books/test_book_http
+	docker compose -f docker/test/docker-compose-test.yml run -v ./:/usr/src/regnify-api  --rm regnify-api python -m pytest --cov-report term-missing --cov=src/books tests/books/test_book_http
 
 	make kill-test
 # * ------ End Book Modules ------ * #

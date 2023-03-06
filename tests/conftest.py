@@ -2,7 +2,7 @@ import pytest
 from src.config import Settings
 from sqlalchemy.orm import Session
 from src.database import close_db_connections, get_engine, open_db_connections
-
+from src.book_mgt.crud import Book_crud
 
 @pytest.fixture()
 def app_settings() -> Settings:

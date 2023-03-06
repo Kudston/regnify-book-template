@@ -23,7 +23,7 @@ def upgrade() -> None:
     sa.Column("author_id", postgresql.UUID(as_uuid=True)),
     sa.Column("title", sa.String(), unique=True),
     sa.Column("description", sa.String()),
-    sa.Column("category", sa.String()),
+    sa.Column("category", postgresql.UUID(as_uuid=True)),
     sa.Column("book_file_id",postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column("book_avatar_id", postgresql.UUID(as_uuid=True), nullable=True),
     sa.Column("uploaded_date", sa.DateTime(), nullable=True),

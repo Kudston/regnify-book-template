@@ -29,17 +29,17 @@ async def create_book(book_info:book_schema.Book_create,
     return handle_result(result=result, expected_schema= book_schema.Book_Out)
 
 @router.post('/mark-book/{book_id}',
-             response_model=book_schema.read_book)
+             response_model=book_schema.Read_book)
 async def mark_book(book_id:book_schema.UUID, 
                 book_service:Book_Service = Security(initiate_Book_service)
                 ):
     #call the book crud to mark book
     result = book_service.mark_book_read(book_id)
     
-    #send mail with information on newly created book
+    #send mail with information on newly marked book
 
     #return result
-    return handle_result(result=result, expected_schema= book_schema.read_book)
+    return handle_result(result=result, expected_schema= book_schema.Read_book)
 
 
 @router.get("/my-books",
@@ -60,6 +60,18 @@ def get_books(common: CommonQueryParams = Depends(),
     result = book_service.get_books(common.skip,common.limit)
     return result.data #handle_result(result, book_schema.Books_out)
 
+
+@router.get("/books-by-category/{category_id}/",
+            response_model=book_schema.Books_out)
+def get_books_by_category(category_id:book_schema.UUID,
+                           common: CommonQueryParams = Depends(),
+            book_service:Book_Service = Security(initiate_Book_service)
+    ):
+    result = book_service.get_books_by_category(category_id, common.skip, common.limit)
+
+    return result.data #handle_result(result, book_schema.Books_out)
+
+
 @router.get("/read-book/{book_title}",
             response_model=book_schema.Book_Out)
 def get_book_by_title(book_title: str, 
@@ -69,11 +81,11 @@ def get_book_by_title(book_title: str,
     return handle_result(result, book_schema.Book_Out)
 
 @router.get("/read-books", 
-            response_model=book_schema.read_books)
+             response_model=book_schema.Read_books)
 def get_read_books(common:CommonQueryParams = Depends(),
                    book_service:Book_Service = Security(initiate_Book_service)
                 ):
-    result = book_service.get_read_book_by_user(common.skip,common.limit)
+    result = book_service.get_read_books_by_user(common.skip,common.limit)
     return result.data
 
 

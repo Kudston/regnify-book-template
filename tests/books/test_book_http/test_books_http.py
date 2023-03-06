@@ -1,8 +1,10 @@
 from fastapi.testclient import TestClient
-from .conftest import client,test_book_super_admin_user, test_book_super_admin_header
+from .conftest import client,test_book_super_admin_user, test_book_super_admin_header,test_book1
 
 
 from src.config import setup_logger
+from src.book_mgt.models import Book,Book_read
+
 logger = setup_logger()
 
 
@@ -14,7 +16,6 @@ def test_create_book_http(client:TestClient,
 ):
     json_data = {
         "title":BOOK_TITLE_UNDER_TEST,
-        "category":"http category",
         "description":"http description"
     }
     response = client.post('/books/create-book',
@@ -47,7 +48,7 @@ def test_update_book_http(client:TestClient,
     assert id_response.json()['title'] == BOOK_TITLE_UNDER_TEST
 
     new_data = {
-        'category':'updated http test category'
+        'description':'updated http test category'
     }
     update_response = client.put(f'/books/{data["id"]}',
                                  json=new_data,
@@ -57,7 +58,8 @@ def test_update_book_http(client:TestClient,
 
     updated_data = update_response.json()
 
-    assert updated_data['category']== 'updated http test category'
+    assert updated_data['description']== 'updated http test category'
+
 
 def test_delete_book(client:TestClient,
                     test_book_super_admin_user:dict, 
@@ -81,7 +83,6 @@ def test_mark_book_http(client:TestClient,
 ):
     json_data = {
         "title":BOOK_TITLE_UNDER_TEST,
-        "category":"http  category",
         "description":"http description"
     }
     response = client.post('/books/create-book',
@@ -95,12 +96,23 @@ def test_mark_book_http(client:TestClient,
                                 headers = test_book_super_admin_header)
 
     assert mark_response.status_code == 200
-    assert mark_response.json()['book_id'] == response.json()['id']
-
+    
     read_books = client.get(f'/books/read-books',
                             headers=test_book_super_admin_header)
     assert read_books.status_code == 200
     data = read_books.json()
 
     assert data['total'] == 1
+    
+def test_get_books_by_category(client:TestClient,
+                               test_book1:Book, 
+                               test_book_super_admin_header:dict):
+    category = test_book1.category
+    response = client.get(f'/books/books-by-category/{category}',
+                          headers=test_book_super_admin_header)
+    
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data['total']==1
     

@@ -17,10 +17,11 @@ class Book(Base):
 
     id = Column(postgresql.UUID(as_uuid=True), primary_key=True,
                 index=True, default=uuid.uuid4)
-    author_id = Column(postgresql.UUID(as_uuid=True)) #consider foreignkey with user
+    author_id = Column(ForeignKey('users.id')) #consider foreignkey with user
+    author =   relationship('User', foreign_keys=[author_id], lazy='joined')
     title  = Column(String, unique=True)
     description = Column(String)
-    category    = Column(String, default="others")
+    category    = Column(postgresql.UUID(as_uuid=True), default=uuid.uuid4)
     book_file_id = Column(postgresql.UUID(as_uuid=True),
         nullable=True
         )
@@ -29,12 +30,14 @@ class Book(Base):
     uploaded_date = Column(DateTime, default=datetime.datetime.utcnow)
     updated_date  = Column(DateTime, nullable=True)
 
-class read_book(Base):
+class Book_read(Base):
     __tablename__ = "Books_read"
 
-    book_id = Column(postgresql.UUID(as_uuid=True),
-                primary_key=True)
-    user_id = Column(postgresql.UUID(as_uuid=True),
-                     primary_key=True)
+    book_id = Column(postgresql.UUID(as_uuid=True), ForeignKey('Book.id'), primary_key=True)
+    book    = relationship('Book', foreign_keys=[book_id],lazy='joined')
+
+    user_id = Column(postgresql.UUID(as_uuid=True), ForeignKey('users.id'), primary_key=True)
+    user    = relationship('User', foreign_keys=[user_id], lazy='joined')
+
     read_date = Column(DateTime, default=datetime.datetime.utcnow)
     
